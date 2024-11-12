@@ -1,12 +1,14 @@
-# monitor_snmp.py
 import asyncio
 from pysnmp.hlapi.v3arch.asyncio import *
 from pysnmp.smi.rfc1902 import *
 
 async def snmp_walk(target, oid, community='public', port=161):
     results = []
+    
+    # Configuración del objetivo de transporte UDP
     transportTarget = await UdpTransportTarget.create((target, port))
     
+    # Llamada a nextCmd para recorrer los OIDs
     iterator = walk_cmd(
         SnmpEngine(),
         CommunityData(community),
@@ -27,13 +29,11 @@ async def snmp_walk(target, oid, community='public', port=161):
             for varBind in varBinds:
                 results.append(varBind)
                 
-    return results
+    return results   
+    
 
-def calc_memory(value, hrStorageAllocationUnits):
-    return value * hrStorageAllocationUnits / (1024**3)
-
-async def obtener_memoria_ram(host='localhost', comunidad='public'):
-    storage_results = await snmp_walk(host, '1.3.6.1.2.1.25.2.3.1', comunidad)
+async def main():
+    storage_results = await snmp_walk('127.0.0.1', '1.3.6.1.2.1.25.2.3.1')
     
     memoria_total = 0
     memoria_usada = 0
@@ -41,25 +41,27 @@ async def obtener_memoria_ram(host='localhost', comunidad='public'):
     memoria_libre = 0
     
     for oid, value in storage_results:
-        oid_str = oid.prettyPrint()
-        if oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.5.4':
+        if(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.5.4'):
             memoria_total = int(value.prettyPrint())
-        elif oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.6.4':
+        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.6.4'):
             memoria_usada = int(value.prettyPrint())
-        elif oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.4.4':
+        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.4.4'):
             hrStorageAllocationUnits = int(value.prettyPrint())
-            
-    if hrStorageAllocationUnits:
-        memoria_total = calc_memory(memoria_total, hrStorageAllocationUnits)
-        memoria_usada = calc_memory(memoria_usada, hrStorageAllocationUnits)
-        memoria_libre = memoria_total - memoria_usada
+        else:
+            continue        
         
+    memoria_total = calc_memory(memoria_total, hrStorageAllocationUnits)
+    memoria_usada = calc_memory(memoria_usada, hrStorageAllocationUnits)
+    memoria_libre = memoria_total - memoria_usada
+
     print(f'Memoria Total: {memoria_total} MB')
     print(f'Memoria Usada: {memoria_usada} MB')
     print(f'Memoria Libre: {memoria_libre} MB')
-
-    return {
-        'Memoria Total (MB)': memoria_total,  # Convertimos a MB
-        'Memoria Usada (MB)': memoria_usada,
-        'Memoria Libre (MB)': memoria_libre,
-    }
+    
+def calc_memory(value, hrStorageAllocationUnits):
+    return value * hrStorageAllocationUnits / (1024**3)
+        
+        
+# Ejecutar el método main
+if __name__ == "__main__":
+    asyncio.run(main())

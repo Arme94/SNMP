@@ -24,6 +24,20 @@
                             borderColor: 'rgba(54, 162, 235, 1)',
                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
                             fill: false,
+                        },
+                        {
+                            label: 'Memoria Usada (MB)',
+                            data: [],
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: false,
+                        },
+                        {
+                            label: 'Memoria Libre (MB)',
+                            data: [],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: false,
                         }
                     ]
                 },
@@ -38,7 +52,7 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Memoria (MB)'
+                                text: 'Valor (MB)'
                             },
                             beginAtZero: true
                         }
@@ -50,29 +64,28 @@
                 fetch('/memoria')
                     .then(response => response.json())
                     .then(data => {
-                        console.log('Datos recibidos:', data);  // Verifica los datos recibidos
                         const ahora = new Date();
                         const tiempo = `${ahora.getHours()}:${ahora.getMinutes()}`;
 
-                        // Añadir tiempo y valores de memoria al gráfico
                         memoriaChart.data.labels.push(tiempo);
-                        memoriaChart.data.datasets[0].data.push(data['Memoria Total'] / 1024);
+                        memoriaChart.data.datasets[0].data.push(data['Memoria Total (MB)']);
+                        memoriaChart.data.datasets[1].data.push(data['Memoria Usada (MB)']);
+                        memoriaChart.data.datasets[2].data.push(data['Memoria Libre (MB)']);
 
-                        // Limitar el número de puntos en el gráfico
                         if (memoriaChart.data.labels.length > 12) {
                             memoriaChart.data.labels.shift();
                             memoriaChart.data.datasets[0].data.shift();
+                            memoriaChart.data.datasets[1].data.shift();
+                            memoriaChart.data.datasets[2].data.shift();
                         }
 
                         memoriaChart.update();
                     })
-                    .catch(error => console.error('Error al actualizar el gráfico:', error));  // Verifica si hay errores en la solicitud
+                    .catch(error => console.error('Error al actualizar el gráfico:', error));
             }
 
-            // Actualizar el gráfico cada 5 minutos
-            setInterval(actualizarGrafico, 10000);  // 300,000 ms = 5 minutos
+            setInterval(actualizarGrafico, 3000);  // 10 segundos para pruebas
 
-            // Actualizar al cargar la página
             actualizarGrafico();
         });
     </script>
