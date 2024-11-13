@@ -3,32 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoreo de Memoria</title>
+    <title>Monitoreo SNMP</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Monitoreo de Memoria</h1>
-    <div id="memoriaCard" style="border:1px solid #ccc; padding:16px; margin:16px;">
-        <h2>Estado Actual</h2>
-        <p>Memoria Total: <span id="memoriaTotal"></span> MB</p>
-        <p>Memoria Usada: <span id="memoriaUsada"></span> MB</p>
-        <p>Memoria Libre: <span id="memoriaLibre"></span> MB</p>
-        <button onclick="window.location.href='/grafico'">Ver Detalle</button>
+    <div class="container-fluid">
+        <h1 class="my-4">Monitoreo SNMP</h1>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Estado Actual (Local)
+                    </div>
+                    <div class="card-body">
+                        <p>Memoria Total: <span id="memoriaTotalLocal"></span> MB</p>
+                        <p>Memoria Usada: <span id="memoriaUsadaLocal"></span> MB</p>
+                        <p>Memoria Libre: <span id="memoriaLibreLocal"></span> MB</p>
+                        <p>CPU Load: <span id="cpuLoadLocal"></span> %</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/grafico?host=localhost'">Ver Detalle</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Estado Actual (192.168.1.3)
+                    </div>
+                    <div class="card-body">
+                        <p>Memoria Total: <span id="memoriaTotalRemote"></span> MB</p>
+                        <p>Memoria Usada: <span id="memoriaUsadaRemote"></span> MB</p>
+                        <p>Memoria Libre: <span id="memoriaLibreRemote"></span> MB</p>
+                        <p>CPU Load: <span id="cpuLoadRemote"></span> %</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/grafico?host=192.168.1.3'">Ver Detalle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function cargarDatosMemoria() {
-            fetch('/memoria')
+        function cargarDatosMemoria(host, prefix) {
+            fetch(`/memoria/${host}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('memoriaTotal').textContent = data['Memoria Total (MB)'];
-                    document.getElementById('memoriaUsada').textContent = data['Memoria Usada (MB)'];
-                    document.getElementById('memoriaLibre').textContent = data['Memoria Libre (MB)'];
+                    document.getElementById(`memoriaTotal${prefix}`).textContent = data['Memoria Total (MB)'];
+                    document.getElementById(`memoriaUsada${prefix}`).textContent = data['Memoria Usada (MB)'];
+                    document.getElementById(`memoriaLibre${prefix}`).textContent = data['Memoria Libre (MB)'];
                 })
                 .catch(error => console.error('Error al cargar los datos de memoria:', error));
         }
 
-        cargarDatosMemoria();
+        function cargarDatosCPU(host, prefix) {
+            fetch(`/cpu/${host}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(`cpuLoad${prefix}`).textContent = data['CPU Load (%)'];
+                })
+                .catch(error => console.error('Error al cargar los datos de CPU:', error));
+        }
+
+        cargarDatosMemoria('localhost', 'Local');
+        cargarDatosMemoria('192.168.1.3', 'Remote');
+        cargarDatosCPU('localhost', 'Local');
+        cargarDatosCPU('192.168.1.3', 'Remote');
     </script>
 </body>
 </html>

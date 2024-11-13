@@ -3,17 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Memoria</title>
+    <title>Histórico de Memoria y CPU</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Histórico de Memoria</h1>
-    <canvas id="memoriaChart" width="400" height="200"></canvas>
+    <div class="container-fluid">
+        <h1 class="my-4">Histórico de Memoria y CPU</h1>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <canvas id="memoriaChart" width="400" height="200"></canvas>
+            </div>
+            <div class="col-12 col-md-6">
+                <canvas id="cpuChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('memoriaChart').getContext('2d');
-            const memoriaChart = new Chart(ctx, {
+            const urlParams = new URLSearchParams(window.location.search);
+            const host = urlParams.get('host') || 'localhost';
+
+            const memoriaCtx = document.getElementById('memoriaChart').getContext('2d');
+            const memoriaChart = new Chart(memoriaCtx, {
                 type: 'line',
                 data: {
                     labels: [],
@@ -31,7 +44,7 @@
                 }
             });
 
-            fetch('/memoria-historico')
+            fetch(`/memoria-historico/${host}`)
                 .then(response => response.json())
                 .then(data => {
                     data.forEach(entry => {
@@ -42,7 +55,35 @@
                     });
                     memoriaChart.update();
                 })
-                .catch(error => console.error('Error al cargar el historial:', error));
+                .catch(error => console.error('Error al cargar el historial de memoria:', error));
+
+            const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+            const cpuChart = new Chart(cpuCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'CPU Load (%)', data: [], borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)', fill: false }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'Tiempo' } },
+                        y: { title: { display: true, text: 'Valor (%)' }, beginAtZero: true }
+                    }
+                }
+            });
+
+            fetch(`/cpu-historico/${host}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(entry => {
+                        cpuChart.data.labels.push(entry.timestamp);
+                        cpuChart.data.datasets[0].data.push(entry.cpu_load);
+                    });
+                    cpuChart.update();
+                })
+                .catch(error => console.error('Error al cargar el historial de CPU:', error));
         });
     </script>
 </body>

@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template
-from monitor_snmp import obtener_memoria_ram, init_db
+from monitor_snmp import obtener_memoria_ram, get_cpu_load, init_db
 import asyncio
 import sqlite3
 import threading
@@ -9,52 +9,87 @@ app = Flask(__name__)
 # Inicializar la base de datos
 init_db()
 
-# Función asincrónica para ejecutar el monitoreo cada 3 segundos
-async def monitorizar_memoria():
+# Función asincrónica para ejecutar el monitoreo cada 3 segundos para una máquina específica
+async def monitorizar_memoria(host):
     while True:
-        await obtener_memoria_ram()
+        await obtener_memoria_ram(host=host)
+        await get_cpu_load(target=host)
         await asyncio.sleep(5)
 
 # Función para ejecutar el monitoreo en un hilo separado para que no interfiera con Flask
-def run_async_loop():
+def run_async_loop(host):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(monitorizar_memoria())
+    loop.run_until_complete(monitorizar_memoria(host))
 
-# Iniciar el monitoreo en un hilo independiente al iniciar la aplicación
-thread = threading.Thread(target=run_async_loop)
-thread.daemon = True  # Para que el hilo se cierre cuando la aplicación se cierre
-thread.start()
+# Iniciar el monitoreo en hilos independientes al iniciar la aplicación
+thread_local = threading.Thread(target=run_async_loop, args=('localhost',))
+thread_local.daemon = True
+thread_local.start()
 
-@app.route('/memoria')
-def memoria():
+thread_remote = threading.Thread(target=run_async_loop, args=('192.168.1.3',))
+thread_remote.daemon = True
+thread_remote.start()
+
+@app.route('/memoria/<host>')
+def memoria(host):
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM memoria ORDER BY timestamp DESC LIMIT 1")
+    cursor.execute("SELECT * FROM memoria WHERE host=? ORDER BY timestamp DESC LIMIT 1", (host,))
     row = cursor.fetchone()
     conn.close()
 
-    if row:
+    if (row):
         memoria_data = {
-            'Memoria Total (MB)': row[2],
-            'Memoria Usada (MB)': row[3],
-            'Memoria Libre (MB)': row[4],
-            'Timestamp': row[1]
+            'Memoria Total (MB)': row[3],
+            'Memoria Usada (MB)': row[4],
+            'Memoria Libre (MB)': row[5],
+            'Timestamp': row[2]
         }
     else:
         memoria_data = {}
 
     return jsonify(memoria_data)
 
-@app.route('/memoria-historico')
-def memoria_historico():
+@app.route('/memoria-historico/<host>')
+def memoria_historico(host):
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria ORDER BY timestamp ASC")
+    cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp ASC", (host,))
     rows = cursor.fetchall()
     conn.close()
 
     historico_data = [{'timestamp': row[0], 'total': row[1], 'usada': row[2], 'libre': row[3]} for row in rows]
+
+    return jsonify(historico_data)
+
+@app.route('/cpu/<host>')
+def cpu(host):
+    conn = sqlite3.connect('monitor.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM cpu WHERE host=? ORDER BY timestamp DESC LIMIT 1", (host,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        cpu_data = {
+            'CPU Load (%)': row[2],
+            'Timestamp': row[1]
+        }
+    else:
+        cpu_data = {}
+
+    return jsonify(cpu_data)
+
+@app.route('/cpu-historico/<host>')
+def cpu_historico(host):
+    conn = sqlite3.connect('monitor.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? ORDER BY timestamp ASC", (host,))
+    rows = cursor.fetchall()
+    conn.close()
+
+    historico_data = [{'timestamp': row[0], 'cpu_load': row[1]} for row in rows]
 
     return jsonify(historico_data)
 
