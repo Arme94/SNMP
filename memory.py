@@ -33,19 +33,24 @@ async def snmp_walk(target, oid, community='public', port=161):
     
 
 async def main():
-    storage_results = await snmp_walk('127.0.0.1', '1.3.6.1.2.1.25.2.3.1')
+    storage_results = await snmp_walk('192.168.1.3', '1.3.6.1.2.1.25.2.3.1')
     
     memoria_total = 0
     memoria_usada = 0
     hrStorageAllocationUnits = 0
     memoria_libre = 0
+    index = 0
     
     for oid, value in storage_results:
-        if(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.5.4'):
+        print(f'{oid.prettyPrint()} = {value.prettyPrint()}')
+        if(oid.prettyPrint().startswith('SNMPv2-SMI::mib-2.25.2.3.1.1.')):
+            index += 1
+            continue
+        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.5.'+str(index)):
             memoria_total = int(value.prettyPrint())
-        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.6.4'):
+        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.6.'+str(index)):
             memoria_usada = int(value.prettyPrint())
-        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.4.4'):
+        elif(oid.prettyPrint() == 'SNMPv2-SMI::mib-2.25.2.3.1.4.'+str(index)):
             hrStorageAllocationUnits = int(value.prettyPrint())
         else:
             continue        

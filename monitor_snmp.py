@@ -39,15 +39,20 @@ async def obtener_memoria_ram(host='localhost', comunidad='public'):
     memoria_usada = 0
     hrStorageAllocationUnits = 0
     memoria_libre = 0
+    index = 0
     
     for oid, value in storage_results:
         oid_str = oid.prettyPrint()
-        if oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.5.4':
+        if(oid_str.startswith('SNMPv2-SMI::mib-2.25.2.3.1.1.')):
+            index += 1
+        elif(oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.5.'+str(index)):
             memoria_total = int(value.prettyPrint())
-        elif oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.6.4':
+        elif(oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.6.'+str(index)):
             memoria_usada = int(value.prettyPrint())
-        elif oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.4.4':
+        elif(oid_str == 'SNMPv2-SMI::mib-2.25.2.3.1.4.'+str(index)):
             hrStorageAllocationUnits = int(value.prettyPrint())
+        else:
+            continue
             
     if hrStorageAllocationUnits:
         memoria_total = calc_memory(memoria_total, hrStorageAllocationUnits)
