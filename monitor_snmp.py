@@ -52,7 +52,7 @@ async def snmp_walk(target, oid, community='public', port=161):
 def calc_memory(value, hrStorageAllocationUnits):
     return value * hrStorageAllocationUnits / (1024**2)
 
-async def obtener_memoria_ram(host='localhost', comunidad='public'):
+async def get_ram_memory(host='localhost', comunidad='public'):
     storage_results = await snmp_walk(host, '1.3.6.1.2.1.25.2.3.1', comunidad)
     
     memoria_total = 0

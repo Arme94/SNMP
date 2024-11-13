@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template
-from monitor_snmp import obtener_memoria_ram, get_cpu_load, init_db
+from monitor_snmp import get_ram_memory, get_cpu_load, init_db
 import asyncio
 import sqlite3
 import threading
@@ -10,9 +10,9 @@ app = Flask(__name__)
 init_db()
 
 # Función asincrónica para ejecutar el monitoreo cada 5 minutos
-async def monitorizar_memoria(host):
+async def monitor_system_resources(host):
     while True:
-        await obtener_memoria_ram(host=host)
+        await get_ram_memory(host=host)
         await get_cpu_load(target=host)
         await asyncio.sleep(300)
 
@@ -20,7 +20,7 @@ async def monitorizar_memoria(host):
 def run_async_loop(host):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(monitorizar_memoria(host))
+    loop.run_until_complete(monitor_system_resources(host))
 
 # Iniciar el monitoreo en hilos independientes al iniciar la aplicación
 thread_local = threading.Thread(target=run_async_loop, args=('localhost',))
@@ -52,7 +52,7 @@ def memoria(host):
     return jsonify(memoria_data)
 
 @app.route('/memoria-historico/<host>')
-def memoria_historico(host):
+def memory_history(host):
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
     cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp ASC", (host,))
