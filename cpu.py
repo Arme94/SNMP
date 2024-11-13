@@ -51,7 +51,7 @@ async def get_cpu_load(target, community='public', port=161):
     return avg_cpu_load if count > 0 else None
 
 async def main():
-    cpu_load = await get_cpu_load('192.168.1.3')
+    cpu_load = await get_cpu_load('192.168.1.3') 
     
 if __name__ == "__main__":
     asyncio.run(main())
