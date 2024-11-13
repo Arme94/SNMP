@@ -44,19 +44,6 @@
                 }
             });
 
-            fetch(`/memoria-historico/${host}`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(entry => {
-                        memoriaChart.data.labels.push(entry.timestamp);
-                        memoriaChart.data.datasets[0].data.push(entry.total);
-                        memoriaChart.data.datasets[1].data.push(entry.usada);
-                        memoriaChart.data.datasets[2].data.push(entry.libre);
-                    });
-                    memoriaChart.update();
-                })
-                .catch(error => console.error('Error al cargar el historial de memoria:', error));
-
             const cpuCtx = document.getElementById('cpuChart').getContext('2d');
             const cpuChart = new Chart(cpuCtx, {
                 type: 'line',
@@ -74,16 +61,40 @@
                 }
             });
 
-            fetch(`/cpu-historico/${host}`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(entry => {
-                        cpuChart.data.labels.push(entry.timestamp);
-                        cpuChart.data.datasets[0].data.push(entry.cpu_load);
-                    });
-                    cpuChart.update();
-                })
-                .catch(error => console.error('Error al cargar el historial de CPU:', error));
+            function updateCharts() {
+                fetch(`/memoria-historico/${host}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        memoriaChart.data.labels = [];
+                        memoriaChart.data.datasets[0].data = [];
+                        memoriaChart.data.datasets[1].data = [];
+                        memoriaChart.data.datasets[2].data = [];
+                        data.forEach(entry => {
+                            memoriaChart.data.labels.push(entry.timestamp);
+                            memoriaChart.data.datasets[0].data.push(entry.total);
+                            memoriaChart.data.datasets[1].data.push(entry.usada);
+                            memoriaChart.data.datasets[2].data.push(entry.libre);
+                        });
+                        memoriaChart.update();
+                    })
+                    .catch(error => console.error('Error al cargar el historial de memoria:', error));
+
+                fetch(`/cpu-historico/${host}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        cpuChart.data.labels = [];
+                        cpuChart.data.datasets[0].data = [];
+                        data.forEach(entry => {
+                            cpuChart.data.labels.push(entry.timestamp);
+                            cpuChart.data.datasets[0].data.push(entry.cpu_load);
+                        });
+                        cpuChart.update();
+                    })
+                    .catch(error => console.error('Error al cargar el historial de CPU:', error));
+            }
+
+            updateCharts();
+            setInterval(updateCharts, 5000); // Actualizar cada 5 segundos
         });
     </script>
 </body>

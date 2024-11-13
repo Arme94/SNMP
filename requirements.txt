@@ -1,0 +1,9 @@
+# Command to install the requirements:
+# pip install -r requirements.txt
+
+Flask==2.0.1
+aioschedule==0.4.3
+pysnmp==4.4.12
+sqlite3==3.35.4
+chart.js==3.5.1
+bootstrap==4.5.2

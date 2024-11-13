@@ -1,4 +1,3 @@
-# monitor_snmp.py
 import asyncio
 from pysnmp.hlapi.v3arch.asyncio import *
 from pysnmp.smi.rfc1902 import *
@@ -78,7 +77,6 @@ async def obtener_memoria_ram(host='localhost', comunidad='public'):
         memoria_usada = calc_memory(memoria_usada, hrStorageAllocationUnits)
         memoria_libre = memoria_total - memoria_usada
 
-    # Insertar los datos en SQLite
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
     cursor.execute('INSERT INTO memoria (host, memoria_total, memoria_usada, memoria_libre) VALUES (?, ?, ?, ?)',

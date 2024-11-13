@@ -9,12 +9,12 @@ app = Flask(__name__)
 # Inicializar la base de datos
 init_db()
 
-# Función asincrónica para ejecutar el monitoreo cada 3 segundos para una máquina específica
+# Función asincrónica para ejecutar el monitoreo cada 5 minutos
 async def monitorizar_memoria(host):
     while True:
         await obtener_memoria_ram(host=host)
         await get_cpu_load(target=host)
-        await asyncio.sleep(5)
+        await asyncio.sleep(300)
 
 # Función para ejecutar el monitoreo en un hilo separado para que no interfiera con Flask
 def run_async_loop(host):

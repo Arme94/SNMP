@@ -5,10 +5,8 @@ from pysnmp.smi.rfc1902 import *
 async def snmp_walk(target, oid, community='public', port=161):
     results = []
     
-    # Configuración del objetivo de transporte UDP
     transportTarget = await UdpTransportTarget.create((target, port))
     
-    # Llamada a nextCmd para recorrer los OIDs
     iterator = walk_cmd(
         SnmpEngine(),
         CommunityData(community),
@@ -65,8 +63,6 @@ async def main():
     
 def calc_memory(value, hrStorageAllocationUnits):
     return value * hrStorageAllocationUnits / (1024**3)
-        
-        
-# Ejecutar el método main
+
 if __name__ == "__main__":
     asyncio.run(main())
