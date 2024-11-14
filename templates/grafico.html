@@ -77,7 +77,10 @@
             }
 
             function updateCharts(startDate) {
-                fetch(`/memoria-historico/${host}?start=${encodeURIComponent(startDate)}`)
+                const memoriaUrl = startDate ? `/memoria-historico/${host}?start=${encodeURIComponent(startDate)}` : `/memoria-historico/${host}`;
+                const cpuUrl = startDate ? `/cpu-historico/${host}?start=${encodeURIComponent(startDate)}` : `/cpu-historico/${host}`;
+
+                fetch(memoriaUrl)
                     .then(response => response.json())
                     .then(data => {
                         const recentData = data.slice(-maxDataPoints);
@@ -89,7 +92,7 @@
                     })
                     .catch(error => console.error('Error al cargar el historial de memoria:', error));
 
-                fetch(`/cpu-historico/${host}?start=${encodeURIComponent(startDate)}`)
+                fetch(cpuUrl)
                     .then(response => response.json())
                     .then(data => {
                         const recentData = data.slice(-maxDataPoints);
@@ -105,8 +108,12 @@
                 updateCharts(startDate);
             });
 
+            setInterval(() => {
+                const startDate = document.getElementById('startDate').value;
+                updateCharts(startDate);
+            }, 5000); // Actualizar cada 5 segundos
+
             updateCharts();
-            setInterval(() => updateCharts(document.getElementById('startDate').value), 5000); // Actualizar cada 5 segundos
         });
     </script>
 </body>

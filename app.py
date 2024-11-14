@@ -1,10 +1,15 @@
 from flask import Flask, jsonify, render_template, request
+import logging
 from monitor_snmp import get_ram_memory, get_cpu_load, init_db
 import asyncio
 import sqlite3
 import threading
 
 app = Flask(__name__)
+
+# Configurar el nivel de logging para suprimir las peticiones GET
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 # Inicializar la base de datos
 init_db()
@@ -59,11 +64,12 @@ def memory_history(host):
     if start_date:
         cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? AND timestamp >= ? ORDER BY timestamp ASC", (host, start_date))
     else:
-        cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp ASC", (host,))
+        cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp DESC LIMIT 100", (host,))
     rows = cursor.fetchall()
     conn.close()
 
     historico_data = [{'timestamp': row[0], 'total': row[1], 'usada': row[2], 'libre': row[3]} for row in rows]
+    historico_data.reverse()  # Reverse to show the most recent data first
 
     return jsonify(historico_data)
 
@@ -93,11 +99,12 @@ def cpu_historico(host):
     if start_date:
         cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? AND timestamp >= ? ORDER BY timestamp ASC", (host, start_date))
     else:
-        cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? ORDER BY timestamp ASC", (host,))
+        cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? ORDER BY timestamp DESC LIMIT 100", (host,))
     rows = cursor.fetchall()
     conn.close()
 
     historico_data = [{'timestamp': row[0], 'cpu_load': row[1]} for row in rows]
+    historico_data.reverse()  # Reverse to show the most recent data first
 
     return jsonify(historico_data)
 
