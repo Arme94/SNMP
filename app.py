@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from monitor_snmp import get_ram_memory, get_cpu_load, init_db
 import asyncio
 import sqlite3
@@ -95,7 +95,8 @@ def cpu_historico(host):
 
 @app.route('/grafico')
 def grafico():
-    return render_template('grafico.html')
+    host = request.args.get('host', 'localhost')
+    return render_template('grafico.html', host=host)
 
 @app.route('/')
 def index():

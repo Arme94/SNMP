@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Memoria y CPU</title>
+    <title>Histórico de Memoria y CPU {{ host }}</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container-fluid">
-        <h1 class="my-4">Histórico de Memoria y CPU</h1>
+        <h1 class="my-4">Histórico de Memoria y CPU {{ host }}</h1>
         <div class="row">
             <div class="col-12 col-md-6">
                 <canvas id="memoriaChart" width="400" height="200"></canvas>
@@ -24,6 +24,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const host = urlParams.get('host') || 'localhost';
+            const maxDataPoints = 100;
 
             const memoriaCtx = document.getElementById('memoriaChart').getContext('2d');
             const memoriaChart = new Chart(memoriaCtx, {
@@ -65,16 +66,11 @@
                 fetch(`/memoria-historico/${host}`)
                     .then(response => response.json())
                     .then(data => {
-                        memoriaChart.data.labels = [];
-                        memoriaChart.data.datasets[0].data = [];
-                        memoriaChart.data.datasets[1].data = [];
-                        memoriaChart.data.datasets[2].data = [];
-                        data.forEach(entry => {
-                            memoriaChart.data.labels.push(entry.timestamp);
-                            memoriaChart.data.datasets[0].data.push(entry.total);
-                            memoriaChart.data.datasets[1].data.push(entry.usada);
-                            memoriaChart.data.datasets[2].data.push(entry.libre);
-                        });
+                        const recentData = data.slice(-maxDataPoints);
+                        memoriaChart.data.labels = recentData.map(entry => entry.timestamp);
+                        memoriaChart.data.datasets[0].data = recentData.map(entry => entry.total);
+                        memoriaChart.data.datasets[1].data = recentData.map(entry => entry.usada);
+                        memoriaChart.data.datasets[2].data = recentData.map(entry => entry.libre);
                         memoriaChart.update();
                     })
                     .catch(error => console.error('Error al cargar el historial de memoria:', error));
@@ -82,12 +78,9 @@
                 fetch(`/cpu-historico/${host}`)
                     .then(response => response.json())
                     .then(data => {
-                        cpuChart.data.labels = [];
-                        cpuChart.data.datasets[0].data = [];
-                        data.forEach(entry => {
-                            cpuChart.data.labels.push(entry.timestamp);
-                            cpuChart.data.datasets[0].data.push(entry.cpu_load);
-                        });
+                        const recentData = data.slice(-maxDataPoints);
+                        cpuChart.data.labels = recentData.map(entry => entry.timestamp);
+                        cpuChart.data.datasets[0].data = recentData.map(entry => entry.cpu_load);
                         cpuChart.update();
                     })
                     .catch(error => console.error('Error al cargar el historial de CPU:', error));
