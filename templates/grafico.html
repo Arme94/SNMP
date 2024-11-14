@@ -10,6 +10,15 @@
 <body>
     <div class="container-fluid">
         <h1 class="my-4">Histórico de Memoria y CPU {{ host }}</h1>
+        <div class="row mb-4">
+            <div class="col-12 col-md-6">
+                <label for="startDate">Fecha y hora de inicio:</label>
+                <input type="datetime-local" id="startDate" class="form-control">
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-end">
+                <button id="reloadButton" class="btn btn-primary">Recargar Gráficas</button>
+            </div>
+        </div>
         <div class="row">
             <div class="col-12 col-md-6">
                 <canvas id="memoriaChart" width="400" height="200"></canvas>
@@ -62,12 +71,17 @@
                 }
             });
 
-            function updateCharts() {
-                fetch(`/memoria-historico/${host}`)
+            function convertToLocalTime(timestamp) {
+                const date = new Date(timestamp + 'Z');
+                return date.toLocaleString();
+            }
+
+            function updateCharts(startDate) {
+                fetch(`/memoria-historico/${host}?start=${encodeURIComponent(startDate)}`)
                     .then(response => response.json())
                     .then(data => {
                         const recentData = data.slice(-maxDataPoints);
-                        memoriaChart.data.labels = recentData.map(entry => entry.timestamp);
+                        memoriaChart.data.labels = recentData.map(entry => convertToLocalTime(entry.timestamp));
                         memoriaChart.data.datasets[0].data = recentData.map(entry => entry.total);
                         memoriaChart.data.datasets[1].data = recentData.map(entry => entry.usada);
                         memoriaChart.data.datasets[2].data = recentData.map(entry => entry.libre);
@@ -75,19 +89,24 @@
                     })
                     .catch(error => console.error('Error al cargar el historial de memoria:', error));
 
-                fetch(`/cpu-historico/${host}`)
+                fetch(`/cpu-historico/${host}?start=${encodeURIComponent(startDate)}`)
                     .then(response => response.json())
                     .then(data => {
                         const recentData = data.slice(-maxDataPoints);
-                        cpuChart.data.labels = recentData.map(entry => entry.timestamp);
+                        cpuChart.data.labels = recentData.map(entry => convertToLocalTime(entry.timestamp));
                         cpuChart.data.datasets[0].data = recentData.map(entry => entry.cpu_load);
                         cpuChart.update();
                     })
                     .catch(error => console.error('Error al cargar el historial de CPU:', error));
             }
 
+            document.getElementById('reloadButton').addEventListener('click', function() {
+                const startDate = document.getElementById('startDate').value;
+                updateCharts(startDate);
+            });
+
             updateCharts();
-            setInterval(updateCharts, 5000); // Actualizar cada 5 segundos
+            setInterval(() => updateCharts(document.getElementById('startDate').value), 5000); // Actualizar cada 5 segundos
         });
     </script>
 </body>

@@ -53,9 +53,13 @@ def memoria(host):
 
 @app.route('/memoria-historico/<host>')
 def memory_history(host):
+    start_date = request.args.get('start')
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp ASC", (host,))
+    if start_date:
+        cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? AND timestamp >= ? ORDER BY timestamp ASC", (host, start_date))
+    else:
+        cursor.execute("SELECT timestamp, memoria_total, memoria_usada, memoria_libre FROM memoria WHERE host=? ORDER BY timestamp ASC", (host,))
     rows = cursor.fetchall()
     conn.close()
 
@@ -83,9 +87,13 @@ def cpu(host):
 
 @app.route('/cpu-historico/<host>')
 def cpu_historico(host):
+    start_date = request.args.get('start')
     conn = sqlite3.connect('monitor.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? ORDER BY timestamp ASC", (host,))
+    if start_date:
+        cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? AND timestamp >= ? ORDER BY timestamp ASC", (host, start_date))
+    else:
+        cursor.execute("SELECT timestamp, cpu_load FROM cpu WHERE host=? ORDER BY timestamp ASC", (host,))
     rows = cursor.fetchall()
     conn.close()
 
